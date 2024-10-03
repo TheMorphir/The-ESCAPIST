@@ -1,0 +1,117 @@
+import pygame
+
+class Case():
+    
+    def __init__(self, coordonnées, materiau):
+        listeMat = {'terre' : (22, 23, 24, 25, 26, 27, 44, 50, 56), 'bois' : (28, 9999), 'carrelage' : (130, 156, 181), 'conduit' : (53, 9999), 'grillage' : (45, 119, 135), 'murs' : (52, 68, 82, 100)}
+        self.coords = coordonnées
+        for mat in listeMat.keys():
+            if materiau in listeMat[mat]:
+                self.mat = mat
+
+        
+    def __repr__(self):
+        return f"Case de {self.mat}"
+        
+    def coordonnéesRéelles(self):
+        return self.coords * 48
+        
+    def estDécoupable(self):
+        return self.mat == grillage
+    
+    def estCreusable(self):
+        return self.mat == terre or self.mat == carrelage
+    
+    def estStockage(self):
+        pass
+    
+    def estBougeable(self):
+        pass
+    
+    def lieu(self):
+        pass
+
+def déplacement(touche, directionX, directionY, collision, speed):
+    '''
+    La fonction fait évoluer le déplacement dans le jeu en fonction des touches appuyée,
+    du mouvement en cours et des collisions à une certaine vitesse.
+    La vitesse est divisée par 1.2 à chaque tour ce qui permet de la limiter et faire
+    s'arrêter le personnage progressivement
+    
+    '''
+
+    directionY /= 1.2
+    directionX /= 1.2
+    
+    if not (collision[0] or collision[1]) :
+        if touche[pygame.K_UP] :
+            directionY -= speed
+        if touche[pygame.K_DOWN] :
+            directionY += speed
+        if touche[pygame.K_LEFT] :
+            directionX -= speed
+        if touche[pygame.K_RIGHT] :
+            directionX += speed
+        
+    if collision[0] :
+        directionY = 0 - directionY * 1.2
+        if directionY > 0 :
+            directionY += 0.1
+        else :
+            directionY -= 0.1
+    if collision[1] :
+        directionX = 0 - directionX * 1.2
+        if directionX > 0 :
+            directionX += 0.1
+        else :
+            directionX -= 0.1
+            
+    return (directionX, directionY)
+    
+
+clock = pygame.time.Clock()
+
+pygame.init()
+pygame.mixer.init()
+pygame.key.set_repeat(400, 30)
+fenetre = pygame.display.set_mode((0, 0))
+
+
+
+environnement = {'sol' : pygame.image.load("Images/Layer0.png").convert_alpha(),\
+                 'grille' : pygame.image.load("Images/Layer1.png").convert_alpha(),\
+                 'murs' : pygame.image.load("Images/Layer2.png").convert_alpha()}
+environnement['total'] = environnement['sol']
+terrain = {}
+personnages = {'joueur' : pygame.image.load("Images/Perso.png").convert_alpha()}
+
+for clé in environnement.keys():
+    environnement['total'].blit(environnement[clé],(0,0))
+    environnement[clé] = pygame.transform.scale_by(environnement[clé], 3)
+for clé in personnages.keys():
+    personnages[clé] = pygame.transform.scale_by(personnages[clé], 3)
+    
+for y in range(environnement['total'].get_height()//48):
+    for x in range(environnement['total'].get_width()//48):
+        terrain[(x,y)] = Case((x,y), environnement['total'].get_at((x*48, y*48)).b)
+    
+    
+    
+direction = (0,0)
+position = (0,0)
+
+    
+continuer  = True
+while continuer:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            continuer = False
+    touchesPressées = pygame.key.get_pressed()
+    direction = déplacement(touchesPressées, direction[0], direction[1], (False, False), 1.8)
+    position = (position[0]-direction[0], position[1]-direction[1])
+    for clé in environnement.keys():
+        fenetre.blit(environnement[clé],position)
+    fenetre.blit(personnages['joueur'], (pygame.display.get_window_size()[0]*0.5, pygame.display.get_window_size()[1]*0.5))
+    pygame.display.update()
+    clock.tick(60)
+pygame.quit()
